@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CelularRank — Encontre o celular que vale mais a pena</title>
+  <meta name="description" content="Compare celulares por preço, desempenho, jogos, câmera e bateria. Notas por categoria e ofertas atualizadas.">
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: #121a2e;
+      --surface2: #171f3d;
+      --border: #252f4c;
+      --border-hover: #5968d8;
+      --primary: #6d7cff;
+      --primary-hover: #8590ff;
+      --text: #f5f7ff;
+      --muted: #8f9bb8;
+      --muted2: #aeb8d1;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100dvh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    a { color: inherit; }
+    button { font-family: inherit; cursor: pointer; }
+    img { max-width: 100%; display: block; }
+
+    /* Header */
+    header {
+      background: rgba(11, 16, 32, 0.95);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    nav {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .logo span { color: var(--primary); }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a {
+      color: var(--muted2);
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .nav-links a:hover { color: #fff; background: var(--surface2); }
+
+    /* Hero */
+    .hero {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 16px 32px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      color: #9da9ff;
+      border: 1px solid #303b70;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(1.75rem, 6vw, 2.75rem);
+      line-height: 1.15;
+      max-width: 20ch;
+      margin: 0 auto 12px;
+      letter-spacing: -0.03em;
+    }
+    h1 span { color: var(--primary); }
+    .hero > p {
+      max-width: 36rem;
+      margin: 0 auto 24px;
+      color: var(--muted2);
+      font-size: 1rem;
+    }
+
+    /* Search */
+    .search-wrap {
+      max-width: 520px;
+      margin: 0 auto 28px;
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 6px;
+      gap: 4px;
+    }
+    .search-wrap input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      color: #fff;
+      padding: 12px 14px;
+      font-size: 1rem;
+    }
+    .search-wrap input::placeholder { color: #6b7694; }
+    .btn-primary {
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    /* Budget chips */
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .chip {
+      background: var(--surface);
+      color: var(--muted2);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .chip:hover { border-color: var(--border-hover); color: #fff; }
+    .chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* Categories */
+    .categories {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .category {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .category:hover, .category.active {
+      transform: translateY(-2px);
+      border-color: var(--border-hover);
+      background: #151e35;
+    }
+    .category.active { box-shadow: 0 0 0 1px var(--primary); }
+    .category .icon { font-size: 1.5rem; margin-bottom: 6px; }
+    .category b { display: block; font-size: 0.85rem; margin-bottom: 2px; }
+    .category small { color: var(--muted); font-size: 0.7rem; }
+
+    /* Main sections */
+    .section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .section h2 {
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+    .section-head p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    /* Filters row */
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter {
+      background: var(--surface);
+      color: var(--muted2);
+      border: 1px solid var(--border);
+      padding: 9px 14px;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .filter.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* Phone cards */
+    .phones {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover { border-color: #3a4670; }
+    .card-top {
+      display: flex;
+      gap: 14px;
+      padding: 16px;
+      background: linear-gradient(145deg, #19213a 0%, #10172a 100%);
+    }
+    .phone-emoji {
+      width: 88px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    .card-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #aab4ff;
+      background: #222b52;
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      width: fit-content;
+    }
+    .card-meta h3 {
+      font-size: 1.15rem;
+      margin-bottom: 2px;
+      letter-spacing: -0.02em;
+    }
+    .brand { color: var(--muted); font-size: 0.8rem; margin-bottom: 8px; }
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(109, 124, 255, 0.2);
+      color: #b8c0ff;
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .score-badge span { color: #fff; }
+    .economy {
+      font-size: 0.8rem;
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .card-body { padding: 0 16px 16px; flex: 1; display: flex; flex-direction: column; }
+    .price-block {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0 4px;
+    }
+    .price {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .price-ref {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+    .price-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .update-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+    .update-badge.fresh { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .update-badge.stale { background: rgba(234, 179, 8, 0.15); color: #facc15; }
+    .update-badge.old { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    .specs-mini {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .specs-mini div {
+      background: #0e1527;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.75rem;
+      color: #9ba7c2;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+    .btn-details {
+      flex: 1;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      background: #222c4d;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .btn-details:hover { background: #2d3a5c; }
+    .btn-offer {
+      flex: 1.2;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      background: var(--primary);
+      border: 0;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .btn-offer:hover { background: var(--primary-hover); }
+
+    .empty {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px dashed var(--border);
+    }
+    .empty.visible { display: block; }
+
+    /* About */
+    #sobre p { color: var(--muted2); max-width: 42rem; margin-bottom: 12px; }
+    .roadmap {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .roadmap-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      color: var(--muted2);
+    }
+    .roadmap-item strong { color: #fff; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 16px;
+      text-align: center;
+      color: #74809c;
+      font-size: 0.8rem;
+    }
+    footer p { margin-bottom: 6px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+      overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg);
+      width: 100%;
+      max-width: 560px;
+      max-height: 92dvh;
+      border-radius: 20px 20px 0 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0.5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      position: sticky;
+      top: 0;
+      background: rgba(11,16,32,0.95);
+      backdrop-filter: blur(10px);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      z-index: 5;
+    }
+    .modal-header h2 { font-size: 1.1rem; }
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      background: var(--surface2);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-body { padding: 16px; padding-bottom: 40px; }
+
+    .modal-hero {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .modal-emoji {
+      width: 100px;
+      height: 120px;
+      background: linear-gradient(145deg, #19213a, #10172a);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      flex-shrink: 0;
+    }
+    .modal-score-big {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .modal-score-big small { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+
+    .price-detail {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .price-detail .main-price {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .price-detail .savings {
+      color: var(--success);
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+    }
+    .price-meta {
+      display: grid;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--muted2);
+    }
+    .price-meta strong { color: #fff; }
+
+    .block-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scores-grid {
+      display: grid;
+      gap: 8px;
+    }
+    .score-bar-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 36px;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+    .score-bar-row .label { color: var(--muted2); }
+    .score-bar {
+      height: 8px;
+      background: #1a2238;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #9ba5ff);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .score-bar-row .val { font-weight: 700; text-align: right; }
+
+    .specs-list {
+      display: grid;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+    .spec-row:last-child { border-bottom: 0; }
+    .spec-row .k { color: var(--muted); }
+    .spec-row .v { font-weight: 600; text-align: right; }
+
+    .stores {
+      display: grid;
+      gap: 8px;
+    }
+    .store-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .store-btn:hover { border-color: var(--border-hover); background: #151e35; }
+    .store-btn .store-name { display: flex; align-items: center; gap: 10px; }
+    .store-btn .arrow { color: var(--muted); font-size: 0.85rem; }
+
+    .notice {
+      background: rgba(234, 179, 8, 0.1);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      color: #fde68a;
+      margin-top: 16px;
+      line-height: 1.45;
+    }
+
+    /* Desktop */
+    @media (min-width: 640px) {
+      .phones { grid-template-columns: repeat(2, 1fr); }
+      .categories { grid-template-columns: repeat(6, 1fr); gap: 10px; }
+      .category small { display: none; }
+      .modal-overlay { align-items: center; padding: 24px; }
+      .modal { border-radius: 20px; max-height: 90vh; }
+    }
+    @media (min-width: 900px) {
+      .phones { grid-template-columns: repeat(3, 1fr); }
+      .hero { padding-top: 60px; }
+      nav { padding: 16px 20px; }
+      .section { padding-left: 20px; padding-right: 20px; }
+    }
+    @media (max-width: 400px) {
+      .card-actions { flex-direction: column; }
+      .score-bar-row { grid-template-columns: 90px 1fr 32px; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="logo">Celular<span>Rank</span> 📱</div>
+      <div class="nav-links">
+        <a href="#encontrar">Buscar</a>
+        <a href="#ofertas">Ofertas</a>
+        <a href="#sobre">Sobre</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="encontrar">
+      <div class="badge">🚀 Protótipo · Preços de exemplo</div>
+      <h1>Encontre o celular que <span>vale mais a pena</span></h1>
+      <p>Compare por orçamento, desempenho, jogos, câmera e bateria — com notas claras e ofertas.</p>
+
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Pesquise por celular ou marca..." autocomplete="off" enterkeyhint="search">
+        <button type="button" class="btn-primary" onclick="applyFilters()">Pesquisar</button>
+      </div>
+
+      <div class="section-label">Seu orçamento</div>
+      <div class="chips" id="budgetChips" role="group" aria-label="Filtro de orçamento">
+        <button type="button" class="chip active" data-budget="all" onclick="setBudget('all', this)">Todos</button>
+        <button type="button" class="chip" data-budget="1000" onclick="setBudget(1000, this)">Até R$ 1.000</button>
+        <button type="button" class="chip" data-budget="1500" onclick="setBudget(1500, this)">Até R$ 1.500</button>
+        <button type="button" class="chip" data-budget="2000" onclick="setBudget(2000, this)">Até R$ 2.000</button>
+        <button type="button" class="chip" data-budget="3000" onclick="setBudget(3000, this)">Até R$ 3.000</button>
+        <button type="button" class="chip" data-budget="99999" onclick="setBudget(99999, this)">R$ 3.000+</button>
+      </div>
+
+      <div class="section-label">Você quer o celular para quê?</div>
+      <div class="categories" id="catGrid">
+        <button type="button" class="category" data-cat="Jogos" onclick="selectCategory('Jogos')">
+          <div class="icon">🎮</div><b>Jogos</b><small>Alto desempenho</small>
+        </button>
+        <button type="button" class="category" data-cat="Câmera" onclick="selectCategory('Câmera')">
+          <div class="icon">📸</div><b>Câmera</b><small>Fotos e vídeos</small>
+        </button>
+        <button type="button" class="category" data-cat="Custo-benefício" onclick="selectCategory('Custo-benefício')">
+          <div class="icon">💰</div><b>Custo-benefício</b><small>Mais pelo preço</small>
+        </button>
+        <button type="button" class="category" data-cat="Bateria" onclick="selectCategory('Bateria')">
+          <div class="icon">🔋</div><b>Bateria</b><small>Dura o dia todo</small>
+        </button>
+        <button type="button" class="category" data-cat="Trabalho" onclick="selectCategory('Trabalho')">
+          <div class="icon">💼</div><b>Trabalho</b><small>Produtividade</small>
+        </button>
+        <button type="button" class="category" data-cat="Estudos" onclick="selectCategory('Estudos')">
+          <div class="icon">📚</div><b>Estudos</b><small>Leitura e apps</small>
+        </button>
+      </div>
+    </section>
+
+    <section class="section" id="ofertas">
+      <div class="section-head">
+        <div>
+          <h2>🔥 Ofertas encontradas</h2>
+          <p>Exemplos para demonstrar o protótipo. Preços e frete devem ser confirmados na loja.</p>
+        </div>
+      </div>
+
+      <div class="filters" id="filterRow">
+        <button type="button" class="filter active" data-filter="Todos" onclick="setFilter('Todos', this)">Todos</button>
+        <button type="button" class="filter" data-filter="Custo-benefício" onclick="setFilter('Custo-benefício', this)">Custo-benefício</button>
+        <button type="button" class="filter" data-filter="Jogos" onclick="setFilter('Jogos', this)">Jogos</button>
+        <button type="button" class="filter" data-filter="Câmera" onclick="setFilter('Câmera', this)">Câmera</button>
+        <button type="button" class="filter" data-filter="Trabalho" onclick="setFilter('Trabalho', this)">Trabalho</button>
+        <button type="button" class="filter" data-filter="Bateria" onclick="setFilter('Bateria', this)">Bateria</button>
+      </div>
+
+      <div class="phones" id="phoneList"></div>
+      <div class="empty" id="empty">Nenhum celular encontrado. Tente outro orçamento ou busca.</div>
+    </section>
+
+    <section class="section" id="sobre">
+      <h2>Sobre o CelularRank</h2>
+      <p>Este é o protótipo visual e de interação. A ideia é ajudar você a escolher o celular certo com <strong>notas por categoria</strong>, preço de referência, economia e links diretos para as lojas.</p>
+      <p>Frete e disponibilidade dependem do CEP e do estoque de cada vendedor — por isso não marcamos “frete grátis” de forma genérica.</p>
+      <div class="roadmap">
+        <div class="roadmap-item"><strong>Próximo passo:</strong> banco de dados + painel admin para atualizar preços e specs pelo celular.</div>
+        <div class="roadmap-item"><strong>Depois:</strong> integração real de preços, CEP para frete e links de afiliado quando houver programa adequado.</div>
+        <div class="roadmap-item"><strong>Objetivo:</strong> ranking confiável, transparente e mobile-first — administrável do seu bolso.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>CelularRank © 2026 — Protótipo demonstrativo.</p>
+    <p>Preços, frete e disponibilidade são exemplos. Confirme sempre na loja antes de comprar.</p>
+  </footer>
+
+  <!-- Modal de detalhes -->
+  <div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Detalhes</h2>
+        <button type="button" class="modal-close" onclick="closeModal()" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // ——— Dados de exemplo (futuramente virão de API/banco) ———
+    const phones = [
+      {
+        id: 'galaxy-a56',
+        name: 'Galaxy A56',
+        brand: 'Samsung',
+        category: 'Custo-benefício',
+        categories: ['Custo-benefício', 'Trabalho', 'Bateria'],
+        price: 1999,
+        refPrice: 2299,
+        score: 9.3,
+        scores: {
+          'Custo-benefício': 9.5,
+          'Jogos': 9.2,
+          'Bateria': 9.4,
+          'Câmera': 8.8,
+          'Trabalho': 9.3,
+          'Tela': 9.1
+        },
+        specs: {
+          processador: 'Exynos 1580',
+          ram: '8 GB',
+          armazenamento: '128 GB',
+          bateria: '5.000 mAh',
+          tela: '6,7" Super AMOLED 120 Hz',
+          cameras: '50 MP (OIS) + 12 MP + 5 MP',
+          carregamento: '45 W',
+          sistema: 'Android 15 · One UI 7'
+        },
+        updateMinutes: 8,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: '#' },
+          { name: 'Samsung', color: '🟢', url: '#' },
+          { name: 'Mercado Livre', color: '🔵', url: '#' },
+          { name: 'Amazon', color: '🔴', url: '#' }
+        ]
+      },
+      {
+        id: 'poco-x7',
+        name: 'POCO X7',
+        brand: 'Xiaomi',
+        category: 'Jogos',
+        categories: ['Jogos', 'Custo-benefício', 'Bateria'],
+        price: 1799,
+        refPrice: 2199,
+        score: 9.1,
+        scores: {
+          'Custo-benefício': 9.4,
+          'Jogos': 9.5,
+          'Bateria': 9.3,
+          'Câmera': 8.5,
+          'Trabalho': 8.9,
+          'Tela': 9.2
+        },
+        specs: {
+          processador: 'Dimensity 7300-Ultra',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '5.110 mAh',
+          tela: '6,67" AMOLED 1,5K 120 Hz',
+          cameras: '50 MP (OIS) + 8 MP + 2 MP',
+          carregamento: '45 W',
+          sistema: 'Android 15 · HyperOS'
+        },
+        updateMinutes: 15,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: '#' },
+          { name: 'Xiaomi', color: '🟠', url: '#' },
+          { name: 'Mercado Livre', color: '🔵', url: '#' },
+          { name: 'Amazon', color: '🔴', url: '#' }
+        ]
+      },
+      {
+        id: 'iphone-15',
+        name: 'iPhone 15',
+        brand: 'Apple',
+        category: 'Câmera',
+        categories: ['Câmera', 'Trabalho', 'Estudos'],
+        price: 3999,
+        refPrice: 4499,
+        score: 9.0,
+        scores: {
+          'Custo-benefício': 7.8,
+          'Jogos': 8.6,
+          'Bateria': 8.4,
+          'Câmera': 9.4,
+          'Trabalho': 9.2,
+          'Tela': 9.0
+        },
+        specs: {
+          processador: 'Chip A16 Bionic',
+          ram: '6 GB',
+          armazenamento: '128 GB',
+          bateria: '~3.349 mAh',
+          tela: '6,1" Super Retina XDR',
+          cameras: '48 MP + 12 MP ultra-wide',
+          carregamento: 'USB-C · MagSafe',
+          sistema: 'iOS 17 / 18'
+        },
+        updateMinutes: 120,
+        stores: [
+          { name: 'Apple', color: '🍎', url: '#' },
+          { name: 'Amazon', color: '🔴', url: '#' },
+          { name: 'Mercado Livre', color: '🔵', url: '#' },
+          { name: 'Shopee', color: '🟠', url: '#' }
+        ]
+      },
+      {
+        id: 'redmi-note-14',
+        name: 'Redmi Note 14',
+        brand: 'Xiaomi',
+        category: 'Custo-benefício',
+        categories: ['Custo-benefício', 'Bateria', 'Estudos'],
+        price: 1299,
+        refPrice: 1599,
+        score: 8.7,
+        scores: {
+          'Custo-benefício': 9.2,
+          'Jogos': 8.0,
+          'Bateria': 9.0,
+          'Câmera': 8.2,
+          'Trabalho': 8.5,
+          'Tela': 8.6
+        },
+        specs: {
+          processador: 'Helio G99 / Snapdragon',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '5.500 mAh',
+          tela: '6,67" AMOLED 120 Hz',
+          cameras: '108 MP + ultra-wide',
+          carregamento: '33–45 W',
+          sistema: 'Android 14/15 · HyperOS'
+        },
+        updateMinutes: 45,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: '#' },
+          { name: 'Xiaomi', color: '🟠', url: '#' },
+          { name: 'Mercado Livre', color: '🔵', url: '#' }
+        ]
+      },
+      {
+        id: 'moto-g85',
+        name: 'Moto G85',
+        brand: 'Motorola',
+        category: 'Bateria',
+        categories: ['Bateria', 'Trabalho', 'Custo-benefício'],
+        price: 1599,
+        refPrice: 1899,
+        score: 8.8,
+        scores: {
+          'Custo-benefício': 9.0,
+          'Jogos': 8.3,
+          'Bateria': 9.3,
+          'Câmera': 8.4,
+          'Trabalho': 8.8,
+          'Tela': 8.9
+        },
+        specs: {
+          processador: 'Snapdragon 6s Gen 3',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '5.000 mAh',
+          tela: '6,5" pOLED 120 Hz',
+          cameras: '50 MP (OIS) + 8 MP',
+          carregamento: '30 W',
+          sistema: 'Android 14'
+        },
+        updateMinutes: 30,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: '#' },
+          { name: 'Mercado Livre', color: '🔵', url: '#' },
+          { name: 'Amazon', color: '🔴', url: '#' }
+        ]
+      },
+      {
+        id: 'galaxy-s24-fe',
+        name: 'Galaxy S24 FE',
+        brand: 'Samsung',
+        category: 'Câmera',
+        categories: ['Câmera', 'Jogos', 'Trabalho'],
+        price: 2899,
+        refPrice: 3499,
+        score: 9.2,
+        scores: {
+          'Custo-benefício': 8.6,
+          'Jogos': 9.1,
+          'Bateria': 8.9,
+          'Câmera': 9.3,
+          'Trabalho': 9.2,
+          'Tela': 9.4
+        },
+        specs: {
+          processador: 'Exynos 2400e',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '4.700 mAh',
+          tela: '6,7" Dynamic AMOLED 2X 120 Hz',
+          cameras: '50 MP + 12 MP + 8 MP',
+          carregamento: '25 W',
+          sistema: 'Android 14 · One UI 6.1'
+        },
+        updateMinutes: 5,
+        stores: [
+          { name: 'Samsung', color: '🟢', url: '#' },
+          { name: 'Amazon', color: '🔴', url: '#' },
+          { name: 'Mercado Livre', color: '🔵', url: '#' },
+          { name: 'Shopee', color: '🟠', url: '#' }
+        ]
+      }
+    ];
+
+    let currentFilter = 'Todos';
+    let currentBudget = 'all';
+    let currentSearch = '';
+
+    function formatPrice(n) {
+      return 'R$ ' + n.toLocaleString('pt-BR');
+    }
+
+    function updateLabel(minutes) {
+      if (minutes < 60) {
+        return { text: `🟢 Preço atualizado há ${minutes} min`, cls: 'fresh' };
+      }
+      if (minutes < 48 * 60) {
+        const h = Math.floor(minutes / 60);
+        return { text: `🟡 Preço atualizado há ${h} h`, cls: 'stale' };
+      }
+      const d = Math.floor(minutes / (60 * 24));
+      return { text: `⚠️ Preço pode estar desatualizado (${d} dias)`, cls: 'old' };
+    }
+
+    function renderCards() {
+      const list = document.getElementById('phoneList');
+      const empty = document.getElementById('empty');
+      const term = currentSearch.toLowerCase().trim();
+
+      const filtered = phones.filter(p => {
+        const matchCat =
+          currentFilter === 'Todos' ||
+          p.category === currentFilter ||
+          (p.categories && p.categories.includes(currentFilter));
+        const matchBudget =
+          currentBudget === 'all' ||
+          (currentBudget === 99999 ? p.price >= 3000 : p.price <= currentBudget);
+        const matchSearch =
+          !term ||
+          p.name.toLowerCase().includes(term) ||
+          p.brand.toLowerCase().includes(term) ||
+          (p.brand + ' ' + p.name).toLowerCase().includes(term);
+        return matchCat && matchBudget && matchSearch;
+      });
+
+      // Ordena por nota (ranking)
+      filtered.sort((a, b) => b.score - a.score);
+
+      list.innerHTML = '';
+      if (filtered.length === 0) {
+        empty.classList.add('visible');
+        return;
+      }
+      empty.classList.remove('visible');
+
+      filtered.forEach(p => {
+        const economy = p.refPrice - p.price;
+        const upd = updateLabel(p.updateMinutes);
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="phone-emoji">📱</div>
+            <div class="card-meta">
+              <span class="tag">${p.category}</span>
+              <h3>${p.name}</h3>
+              <div class="brand">${p.brand}</div>
+              <div class="score-row">
+                <span class="score-badge">⭐ <span>${p.score.toFixed(1).replace('.', ',')}</span>/10</span>
+                ${economy > 0 ? `<span class="economy">Economia R$ ${economy.toLocaleString('pt-BR')}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="price-block">
+              <span class="price">${formatPrice(p.price)}</span>
+              ${p.refPrice > p.price ? `<span class="price-ref">${formatPrice(p.refPrice)}</span>` : ''}
+            </div>
+            <div class="price-note">melhor preço encontrado · exemplo</div>
+            <div class="update-badge ${upd.cls}">${upd.text}</div>
+            <div class="specs-mini">
+              <div>⚡ ${p.specs.ram} RAM</div>
+              <div>💾 ${p.specs.armazenamento}</div>
+              <div>🔋 ${p.specs.bateria}</div>
+              <div>📱 ${p.specs.tela.split(' ').slice(0, 2).join(' ')}</div>
+            </div>
+            <div class="card-actions">
+              <button type="button" class="btn-details" onclick="openModal('${p.id}')">Ver detalhes</button>
+              <a class="btn-offer" href="#ofertas" onclick="openModal('${p.id}'); return false;">Ver oferta</a>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function openModal(id) {
+      const p = phones.find(x => x.id === id);
+      if (!p) return;
+      const economy = p.refPrice - p.price;
+      const upd = updateLabel(p.updateMinutes);
+      document.getElementById('modalTitle').textContent = p.brand + ' ' + p.name;
+
+      const scoreRows = Object.entries(p.scores)
+        .map(([k, v]) => {
+          const pct = (v / 10) * 100;
+          return `
+            <div class="score-bar-row">
+              <span class="label">${emojiFor(k)} ${k}</span>
+              <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div>
+              <span class="val">${v.toFixed(1).replace('.', ',')}</span>
+            </div>`;
+        })
+        .join('');
+
+      const storeBtns = p.stores
+        .map(s => `
+          <a class="store-btn" href="${s.url}" target="_blank" rel="noopener">
+            <span class="store-name">${s.color} ${s.name}</span>
+            <span class="arrow">Ver oferta →</span>
+          </a>`)
+        .join('');
+
+      document.getElementById('modalBody').innerHTML = `
+        <div class="modal-hero">
+          <div class="modal-emoji">📱</div>
+          <div>
+            <div class="modal-score-big">${p.score.toFixed(1).replace('.', ',')}<small>/10</small></div>
+            <div style="color:var(--muted);font-size:0.85rem;margin-top:4px">Nota CelularRank</div>
+            <div class="update-badge ${upd.cls}" style="margin-top:10px">${upd.text}</div>
+          </div>
+        </div>
+
+        <div class="price-detail">
+          <div class="main-price">${formatPrice(p.price)}</div>
+          ${economy > 0 ? `<div class="savings">🟢 Economia: ${formatPrice(economy)} (ref. ${formatPrice(p.refPrice)})</div>` : ''}
+          <div class="price-meta">
+            <div>🚚 Frete: <strong>consulte na loja</strong> (depende do CEP)</div>
+            <div>📦 Entrega estimada: <strong>consultar no checkout</strong></div>
+            <div>🕐 Preço atualizado: <strong>${upd.text.replace(/^[🟢🟡⚠️]\s*/, '')}</strong></div>
+          </div>
+        </div>
+
+        <div class="block-title">🏆 Notas por categoria</div>
+        <div class="scores-grid">${scoreRows}</div>
+        <p style="font-size:0.8rem;color:var(--muted);margin-top:10px">
+          As notas mostram por que o aparelho está no ranking — não só uma média geral.
+        </p>
+
+        <div class="block-title">📋 Especificações</div>
+        <div class="specs-list">
+          <div class="spec-row"><span class="k">⚡ Processador</span><span class="v">${p.specs.processador}</span></div>
+          <div class="spec-row"><span class="k">🧠 RAM</span><span class="v">${p.specs.ram}</span></div>
+          <div class="spec-row"><span class="k">💾 Armazenamento</span><span class="v">${p.specs.armazenamento}</span></div>
+          <div class="spec-row"><span class="k">🔋 Bateria</span><span class="v">${p.specs.bateria}</span></div>
+          <div class="spec-row"><span class="k">📱 Tela</span><span class="v">${p.specs.tela}</span></div>
+          <div class="spec-row"><span class="k">📸 Câmeras</span><span class="v">${p.specs.cameras}</span></div>
+          <div class="spec-row"><span class="k">🔌 Carregamento</span><span class="v">${p.specs.carregamento}</span></div>
+          <div class="spec-row"><span class="k">🤖 Sistema</span><span class="v">${p.specs.sistema}</span></div>
+        </div>
+
+        <div class="block-title">🛒 Onde comprar</div>
+        <div class="stores">${storeBtns}</div>
+        <div class="notice">
+          <strong>Importante:</strong> frete, prazo e estoque variam por CEP e vendedor.
+          Os botões levam às páginas do produto (links de exemplo neste protótipo).
+          No futuro, com programa de afiliados, os links poderão ser substituídos — seguindo as regras de cada plataforma.
+        </div>
+      `;
+
+      document.getElementById('modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function emojiFor(cat) {
+      const map = {
+        'Custo-benefício': '💰',
+        'Jogos': '🎮',
+        'Bateria': '🔋',
+        'Câmera': '📸',
+        'Trabalho': '💼',
+        'Tela': '📱',
+        'Estudos': '📚'
+      };
+      return map[cat] || '•';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('#filterRow .filter').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      // sync category buttons
+      document.querySelectorAll('.category').forEach(c => {
+        c.classList.toggle('active', c.dataset.cat === filter);
+      });
+      renderCards();
+    }
+
+    function selectCategory(cat) {
+      currentFilter = cat;
+      document.querySelectorAll('#filterRow .filter').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === cat);
+      });
+      document.querySelectorAll('.category').forEach(c => {
+        c.classList.toggle('active', c.dataset.cat === cat);
+      });
+      document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth' });
+      renderCards();
+    }
+
+    function setBudget(val, btn) {
+      currentBudget = val;
+      document.querySelectorAll('#budgetChips .chip').forEach(c => c.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderCards();
+    }
+
+    function applyFilters() {
+      currentSearch = document.getElementById('search').value;
+      renderCards();
+      document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    document.getElementById('search').addEventListener('keydown', e => {
+      if (e.key === 'Enter') applyFilters();
+    });
+
+    document.getElementById('modal').addEventListener('click', e => {
+      if (e.target.id === 'modal') closeModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Inicial
+    renderCards();
+  </script>
+</body>
+</html>
