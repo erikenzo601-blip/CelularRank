@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CelularRank — Ranking de custo-benefício</title>
+  <meta name="description" content="Ranking automático de celulares por custo-benefício. Notas de desempenho, câmera, bateria e preço atualizado.">
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: #121a2e;
+      --surface2: #171f3d;
+      --border: #252f4c;
+      --border-hover: #5968d8;
+      --primary: #6d7cff;
+      --primary-hover: #8590ff;
+      --text: #f5f7ff;
+      --muted: #8f9bb8;
+      --muted2: #aeb8d1;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100dvh;
+      padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    }
+    a { color: inherit; }
+    button, input, select, textarea { font-family: inherit; }
+    button { cursor: pointer; }
+    input, select, textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #fff;
+      padding: 12px 14px;
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+
+    header {
+      background: rgba(11, 16, 32, 0.96);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    nav {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
+    .logo span { color: var(--primary); }
+    .nav-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-icon {
+      width: 40px; height: 40px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-icon:hover { border-color: var(--border-hover); }
+    .btn-primary {
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: #fff;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      font-size: 0.875rem;
+    }
+    .btn-danger {
+      border: 0;
+      background: rgba(239,68,68,0.2);
+      color: #f87171;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      font-size: 0.875rem;
+    }
+
+    .hero {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 16px 24px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface2); color: #9da9ff;
+      border: 1px solid #303b70;
+      padding: 5px 11px; border-radius: 999px;
+      font-size: 0.75rem; margin-bottom: 12px;
+    }
+    h1 {
+      font-size: clamp(1.6rem, 5.5vw, 2.4rem);
+      line-height: 1.15;
+      max-width: 18ch;
+      margin: 0 auto 10px;
+      letter-spacing: -0.03em;
+    }
+    h1 span { color: var(--primary); }
+    .hero > p { max-width: 34rem; margin: 0 auto 20px; color: var(--muted2); font-size: 0.95rem; }
+
+    .search-wrap {
+      max-width: 480px; margin: 0 auto 20px;
+      display: flex; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; padding: 5px; gap: 4px;
+    }
+    .search-wrap input {
+      flex: 1; min-width: 0; background: transparent; border: 0; padding: 11px 12px;
+    }
+
+    .section-label {
+      font-size: 0.75rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
+    }
+    .chips {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px;
+    }
+    .chip {
+      background: var(--surface); color: var(--muted2);
+      border: 1px solid var(--border); padding: 9px 13px; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600;
+    }
+    .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    .categories {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      max-width: 560px; margin: 0 auto;
+    }
+    .category {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 8px; text-align: center; font-size: 0.8rem;
+    }
+    .category.active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .category .icon { font-size: 1.3rem; margin-bottom: 4px; }
+    .category b { display: block; font-size: 0.78rem; }
+
+    .section {
+      max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px;
+    }
+    .section-head {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .section h2 { font-size: 1.25rem; letter-spacing: -0.02em; }
+    .section-head p { color: var(--muted); font-size: 0.85rem; width: 100%; }
+
+    .cep-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 18px;
+    }
+    .cep-box p { font-size: 0.8rem; color: var(--muted2); margin-bottom: 10px; }
+    .cep-row { display: flex; gap: 8px; }
+    .cep-row input { max-width: 140px; }
+
+    .filters {
+      display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
+      margin-bottom: 16px; padding-bottom: 4px; -webkit-overflow-scrolling: touch;
+    }
+    .filter {
+      background: var(--surface); color: var(--muted2);
+      border: 1px solid var(--border); padding: 8px 13px; border-radius: 9px;
+      font-size: 0.8rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;
+    }
+    .filter.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .sort-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+      font-size: 0.8rem; color: var(--muted);
+    }
+    .sort-row select { width: auto; padding: 8px 12px; font-size: 0.8rem; }
+
+    .phones { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+    }
+    .card-rank {
+      position: absolute; top: 10px; left: 10px;
+      background: var(--primary); color: #fff; font-weight: 800;
+      font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; z-index: 2;
+    }
+    .card-top {
+      position: relative;
+      display: flex; gap: 12px; padding: 14px;
+      background: linear-gradient(145deg, #19213a, #10172a);
+    }
+    .phone-emoji {
+      width: 72px; height: 92px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.6rem; background: rgba(0,0,0,0.25); border-radius: 10px; flex-shrink: 0;
+    }
+    .card-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .tag {
+      display: inline-block; font-size: 0.65rem; font-weight: 700; color: #aab4ff;
+      background: #222b52; padding: 3px 7px; border-radius: 5px; margin-bottom: 4px; width: fit-content;
+    }
+    .card-meta h3 { font-size: 1.05rem; letter-spacing: -0.02em; }
+    .brand { color: var(--muted); font-size: 0.75rem; margin-bottom: 6px; }
+    .score-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .score-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: rgba(109,124,255,0.2); color: #b8c0ff;
+      font-weight: 800; font-size: 0.85rem; padding: 3px 8px; border-radius: 7px;
+    }
+    .score-badge span { color: #fff; }
+    .cb-score { font-size: 0.75rem; color: var(--success); font-weight: 700; }
+    .economy { font-size: 0.75rem; color: var(--success); font-weight: 600; }
+
+    .card-body { padding: 0 14px 14px; flex: 1; display: flex; flex-direction: column; }
+    .price-block { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 10px 0 2px; }
+    .price { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; }
+    .price-ref { font-size: 0.8rem; color: var(--muted); text-decoration: line-through; }
+    .price-note { font-size: 0.7rem; color: var(--muted); margin-bottom: 8px; }
+    .update-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.7rem; padding: 3px 7px; border-radius: 6px; margin-bottom: 10px; width: fit-content;
+    }
+    .update-badge.fresh { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .update-badge.stale { background: rgba(234,179,8,0.15); color: #facc15; }
+    .update-badge.old { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    .specs-mini {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 12px;
+    }
+    .specs-mini div {
+      background: #0e1527; border-radius: 7px; padding: 7px 9px;
+      font-size: 0.7rem; color: #9ba7c2;
+    }
+    .mini-scores {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 12px;
+    }
+    .mini-score {
+      text-align: center; background: #0e1527; border-radius: 8px; padding: 6px 2px;
+    }
+    .mini-score .n { font-weight: 800; font-size: 0.85rem; color: #c5ccff; }
+    .mini-score .l { font-size: 0.6rem; color: var(--muted); }
+
+    .card-actions { display: flex; gap: 8px; margin-top: auto; }
+    .btn-details, .btn-offer {
+      flex: 1; text-align: center; text-decoration: none; color: #fff;
+      border: 0; border-radius: 10px; padding: 11px; font-size: 0.8rem; font-weight: 700;
+    }
+    .btn-details { background: #222c4d; }
+    .btn-offer { background: var(--primary); flex: 1.15; }
+
+    .empty {
+      display: none; text-align: center; padding: 36px 16px; color: var(--muted);
+      background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--border);
+    }
+    .empty.visible { display: block; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 16px; text-align: center; color: #74809c; font-size: 0.75rem;
+    }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(11,16,32,0.97); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 90; backdrop-filter: blur(10px);
+    }
+    .bottom-nav button {
+      background: none; border: 0; color: var(--muted); font-size: 0.7rem;
+      display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 12px;
+    }
+    .bottom-nav button.active { color: var(--primary); }
+    .bottom-nav .ico { font-size: 1.25rem; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200;
+      display: none; align-items: flex-end; justify-content: center; overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg); width: 100%; max-width: 560px; max-height: 92dvh;
+      border-radius: 20px 20px 0 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      animation: slideUp 0.25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0.6; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      position: sticky; top: 0; background: rgba(11,16,32,0.96); backdrop-filter: blur(10px);
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); z-index: 5;
+    }
+    .modal-header h2 { font-size: 1.05rem; }
+    .modal-close {
+      width: 36px; height: 36px; border: 0; background: var(--surface2);
+      color: #fff; border-radius: 50%; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-body { padding: 16px; padding-bottom: 48px; }
+
+    .modal-hero { display: flex; gap: 14px; margin-bottom: 16px; }
+    .modal-emoji {
+      width: 88px; height: 108px;
+      background: linear-gradient(145deg, #19213a, #10172a);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 3rem; flex-shrink: 0;
+    }
+    .modal-score-big { font-size: 1.8rem; font-weight: 800; color: var(--primary); line-height: 1; }
+    .modal-score-big small { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+
+    .price-detail {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 16px;
+    }
+    .price-detail .main-price { font-size: 1.6rem; font-weight: 800; margin-bottom: 2px; }
+    .price-detail .savings { color: var(--success); font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; }
+    .price-meta { display: grid; gap: 5px; font-size: 0.8rem; color: var(--muted2); }
+    .price-meta strong { color: #fff; }
+
+    .block-title {
+      font-size: 0.9rem; font-weight: 700; margin: 20px 0 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .scores-grid { display: grid; gap: 8px; }
+    .score-bar-row {
+      display: grid; grid-template-columns: 100px 1fr 34px; align-items: center; gap: 8px;
+      font-size: 0.8rem;
+    }
+    .score-bar-row .label { color: var(--muted2); }
+    .score-bar { height: 7px; background: #1a2238; border-radius: 4px; overflow: hidden; }
+    .score-bar-fill {
+      height: 100%; background: linear-gradient(90deg, var(--primary), #9ba5ff); border-radius: 4px;
+    }
+    .score-bar-row .val { font-weight: 700; text-align: right; }
+
+    .specs-list {
+      display: grid; gap: 0; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .spec-row {
+      display: flex; justify-content: space-between; gap: 10px;
+      padding: 11px 13px; border-bottom: 1px solid var(--border); font-size: 0.85rem;
+    }
+    .spec-row:last-child { border-bottom: 0; }
+    .spec-row .k { color: var(--muted); }
+    .spec-row .v { font-weight: 600; text-align: right; }
+
+    .stores { display: grid; gap: 8px; }
+    .store-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 14px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 0.875rem;
+    }
+    .store-btn:hover { border-color: var(--border-hover); }
+    .store-btn .arrow { color: var(--muted); font-size: 0.8rem; }
+
+    .notice {
+      background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.3);
+      border-radius: 12px; padding: 11px 13px; font-size: 0.75rem; color: #fde68a;
+      margin-top: 14px; line-height: 1.45;
+    }
+
+    .admin-panel {
+      display: none; max-width: 640px; margin: 0 auto; padding: 16px 16px 100px;
+    }
+    .admin-panel.open { display: block; }
+    .admin-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; gap: 10px;
+    }
+    .admin-header h2 { font-size: 1.2rem; }
+    .form-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px; margin-bottom: 14px;
+    }
+    .form-grid { display: grid; gap: 12px; }
+    .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .admin-list { display: grid; gap: 10px; margin-top: 20px; }
+    .admin-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .admin-item .info h4 { font-size: 0.95rem; }
+    .admin-item .info small { color: var(--muted); font-size: 0.75rem; }
+    .admin-item .actions { display: flex; gap: 6px; }
+    .admin-item .actions button {
+      padding: 8px 10px; font-size: 0.75rem; border-radius: 8px;
+    }
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #1a2744; border: 1px solid var(--primary); color: #fff;
+      padding: 12px 20px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;
+      z-index: 300; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .toast.show { display: block; animation: fadeIn 0.2s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+    .main-view.hidden { display: none; }
+
+    @media (min-width: 640px) {
+      .phones { grid-template-columns: repeat(2, 1fr); }
+      .categories { grid-template-columns: repeat(6, 1fr); }
+      .modal-overlay { align-items: center; padding: 24px; }
+      .modal { border-radius: 20px; max-height: 90vh; }
+    }
+    @media (min-width: 900px) {
+      .phones { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="logo">Celular<span>Rank</span></div>
+      <div class="nav-actions">
+        <button type="button" class="btn-icon" id="btnAdmin" title="Admin" aria-label="Painel admin">⚙️</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="main-view" id="mainView">
+    <section class="hero" id="encontrar">
+      <div class="badge">📱 Ranking automático · Atualizável pelo celular</div>
+      <h1>O celular que <span>vale mais a pena</span></h1>
+      <p>Notas de desempenho, câmera e bateria + ranking de custo-benefício calculado automaticamente.</p>
+
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Pesquise por celular ou marca..." autocomplete="off" enterkeyhint="search">
+        <button type="button" class="btn-primary" onclick="applyFilters()">Buscar</button>
+      </div>
+
+      <div class="section-label">Seu orçamento</div>
+      <div class="chips" id="budgetChips">
+        <button type="button" class="chip active" data-budget="all" onclick="setBudget('all',this)">Todos</button>
+        <button type="button" class="chip" data-budget="1000" onclick="setBudget(1000,this)">Até R$ 1.000</button>
+        <button type="button" class="chip" data-budget="1500" onclick="setBudget(1500,this)">Até R$ 1.500</button>
+        <button type="button" class="chip" data-budget="2000" onclick="setBudget(2000,this)">Até R$ 2.000</button>
+        <button type="button" class="chip" data-budget="3000" onclick="setBudget(3000,this)">Até R$ 3.000</button>
+        <button type="button" class="chip" data-budget="99999" onclick="setBudget(99999,this)">R$ 3.000+</button>
+      </div>
+
+      <div class="section-label">Para quê?</div>
+      <div class="categories" id="catGrid">
+        <button type="button" class="category" data-cat="Jogos" onclick="selectCategory('Jogos')"><div class="icon">🎮</div><b>Jogos</b></button>
+        <button type="button" class="category" data-cat="Câmera" onclick="selectCategory('Câmera')"><div class="icon">📸</div><b>Câmera</b></button>
+        <button type="button" class="category" data-cat="Custo-benefício" onclick="selectCategory('Custo-benefício')"><div class="icon">💰</div><b>Custo-benefício</b></button>
+        <button type="button" class="category" data-cat="Bateria" onclick="selectCategory('Bateria')"><div class="icon">🔋</div><b>Bateria</b></button>
+        <button type="button" class="category" data-cat="Trabalho" onclick="selectCategory('Trabalho')"><div class="icon">💼</div><b>Trabalho</b></button>
+        <button type="button" class="category" data-cat="Estudos" onclick="selectCategory('Estudos')"><div class="icon">📚</div><b>Estudos</b></button>
+      </div>
+    </section>
+
+    <section class="section" id="ofertas">
+      <div class="section-head">
+        <div>
+          <h2>🏆 Ranking de custo-benefício</h2>
+          <p>Ordenado automaticamente. Preço e frete dependem da loja e do CEP.</p>
+        </div>
+      </div>
+
+      <div class="cep-box">
+        <p>📦 Frete e prazo variam por CEP, vendedor e estoque. Informe seu CEP (estrutura preparada para integração futura).</p>
+        <div class="cep-row">
+          <input id="cepInput" type="text" inputmode="numeric" maxlength="9" placeholder="00000-000" aria-label="CEP">
+          <button type="button" class="btn-secondary" onclick="checkCep()">Consultar</button>
+        </div>
+        <p id="cepResult" style="margin-top:8px;font-size:0.8rem;color:var(--muted2);display:none;"></p>
+      </div>
+
+      <div class="filters" id="filterRow">
+        <button type="button" class="filter active" data-filter="Todos" onclick="setFilter('Todos',this)">Todos</button>
+        <button type="button" class="filter" data-filter="Custo-benefício" onclick="setFilter('Custo-benefício',this)">Custo-benefício</button>
+        <button type="button" class="filter" data-filter="Jogos" onclick="setFilter('Jogos',this)">Jogos</button>
+        <button type="button" class="filter" data-filter="Câmera" onclick="setFilter('Câmera',this)">Câmera</button>
+        <button type="button" class="filter" data-filter="Bateria" onclick="setFilter('Bateria',this)">Bateria</button>
+        <button type="button" class="filter" data-filter="Trabalho" onclick="setFilter('Trabalho',this)">Trabalho</button>
+      </div>
+
+      <div class="sort-row">
+        <span>Ordenar:</span>
+        <select id="sortSelect" onchange="renderCards()">
+          <option value="custo">Melhor custo-benefício</option>
+          <option value="nota">Maior nota geral</option>
+          <option value="preco-asc">Menor preço</option>
+          <option value="preco-desc">Maior preço</option>
+          <option value="bateria">Melhor bateria</option>
+          <option value="camera">Melhor câmera</option>
+          <option value="desempenho">Melhor desempenho</option>
+        </select>
+      </div>
+
+      <div class="phones" id="phoneList"></div>
+      <div class="empty" id="empty">Nenhum celular encontrado. Tente outro filtro ou cadastre no Admin.</div>
+    </section>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-header">
+      <h2>⚙️ Admin · Atualizar pelo celular</h2>
+      <button type="button" class="btn-secondary" onclick="closeAdmin()">← Voltar</button>
+    </div>
+
+    <div class="form-card">
+      <h3 style="margin-bottom:12px;font-size:1rem;" id="formTitle">Cadastrar / editar celular</h3>
+      <input type="hidden" id="editId">
+      <div class="form-grid">
+        <div>
+          <label>Marca</label>
+          <input id="fBrand" placeholder="Samsung, Xiaomi...">
+        </div>
+        <div>
+          <label>Modelo</label>
+          <input id="fName" placeholder="Galaxy A56">
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label>Preço atual (R$)</label>
+            <input id="fPrice" type="number" inputmode="decimal" placeholder="1999">
+          </div>
+          <div>
+            <label>Preço referência (R$)</label>
+            <input id="fRef" type="number" inputmode="decimal" placeholder="2299">
+          </div>
+        </div>
+        <div>
+          <label>Categoria principal</label>
+          <select id="fCat">
+            <option>Custo-benefício</option>
+            <option>Jogos</option>
+            <option>Câmera</option>
+            <option>Bateria</option>
+            <option>Trabalho</option>
+            <option>Estudos</option>
+          </select>
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label>⭐ Nota geral (0–10)</label>
+            <input id="fScore" type="number" step="0.1" min="0" max="10" placeholder="9.0">
+          </div>
+          <div>
+            <label>🎮 Desempenho / Jogos</label>
+            <input id="fJogos" type="number" step="0.1" min="0" max="10" placeholder="9.0">
+          </div>
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label>📸 Câmera</label>
+            <input id="fCamera" type="number" step="0.1" min="0" max="10" placeholder="8.5">
+          </div>
+          <div>
+            <label>🔋 Bateria</label>
+            <input id="fBateria" type="number" step="0.1" min="0" max="10" placeholder="9.0">
+          </div>
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label>💰 Custo-benefício (nota)</label>
+            <input id="fCb" type="number" step="0.1" min="0" max="10" placeholder="9.2">
+          </div>
+          <div>
+            <label>💼 Trabalho</label>
+            <input id="fTrabalho" type="number" step="0.1" min="0" max="10" placeholder="8.8">
+          </div>
+        </div>
+        <div>
+          <label>Processador</label>
+          <input id="fProc" placeholder="Exynos 1580">
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label>RAM</label>
+            <input id="fRam" placeholder="8 GB">
+          </div>
+          <div>
+            <label>Armazenamento</label>
+            <input id="fStorage" placeholder="128 GB">
+          </div>
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label>Bateria (mAh)</label>
+            <input id="fBat" placeholder="5000 mAh">
+          </div>
+          <div>
+            <label>Tela</label>
+            <input id="fTela" placeholder='6,7" AMOLED 120Hz'>
+          </div>
+        </div>
+        <div>
+          <label>Câmeras</label>
+          <input id="fCams" placeholder="50 MP OIS + 12 MP + 5 MP">
+        </div>
+        <div class="form-grid two">
+          <div>
+            <label>Carregamento</label>
+            <input id="fCharge" placeholder="45 W">
+          </div>
+          <div>
+            <label>Sistema</label>
+            <input id="fOs" placeholder="Android 15">
+          </div>
+        </div>
+        <div>
+          <label>Links das lojas (JSON — opcional)</label>
+          <textarea id="fStores" rows="3" placeholder='[{"name":"Shopee","color":"🟠","url":"https://..."}]'></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-primary" onclick="savePhone()">💾 Salvar</button>
+        <button type="button" class="btn-secondary" onclick="clearForm()">Limpar</button>
+        <button type="button" class="btn-danger" id="btnDelete" style="display:none" onclick="deletePhone()">Excluir</button>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 style="font-size:1rem;">Celulares cadastrados</h3>
+      <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:0.75rem;" onclick="exportData()">Exportar JSON</button>
+    </div>
+    <div class="admin-list" id="adminList"></div>
+    <p style="margin-top:16px;font-size:0.75rem;color:var(--muted);">
+      Dados no navegador (localStorage). Funciona offline e pelo celular. Exporte o JSON para backup ou migrar para banco depois.
+    </p>
+  </div>
+
+  <footer>
+    <p>CelularRank © 2026 · Protótipo com ranking automático</p>
+    <p>Frete e disponibilidade dependem do CEP e da loja. Confirme sempre no checkout.</p>
+  </footer>
+
+  <nav class="bottom-nav" id="bottomNav">
+    <button type="button" class="active" onclick="showMain()" data-tab="main"><span class="ico">🏠</span>Início</button>
+    <button type="button" onclick="document.getElementById('ofertas').scrollIntoView({behavior:'smooth'})" data-tab="rank"><span class="ico">🏆</span>Ranking</button>
+    <button type="button" onclick="openAdmin()" data-tab="admin"><span class="ico">⚙️</span>Admin</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-overlay" id="modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Detalhes</h2>
+        <button type="button" class="modal-close" onclick="closeModal()" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_PHONES = [
+      {
+        id: 'redmi-note-14-5g',
+        brand: 'Xiaomi',
+        name: 'Redmi Note 14 5G',
+        category: 'Custo-benefício',
+        categories: ['Custo-benefício', 'Bateria', 'Estudos'],
+        price: 1385,
+        refPrice: 1699,
+        score: 9.0,
+        scores: { 'Custo-benefício': 9.5, 'Jogos': 8.6, 'Bateria': 9.2, 'Câmera': 8.4, 'Trabalho': 8.7, 'Tela': 8.9 },
+        specs: {
+          processador: 'Dimensity 7025 / similar',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '5.110 mAh',
+          tela: '6,67" AMOLED 120 Hz',
+          cameras: '108 MP + ultra-wide',
+          carregamento: '45 W',
+          sistema: 'Android 14/15 · HyperOS'
+        },
+        updatedAt: Date.now() - 12 * 60 * 1000,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' },
+          { name: 'Xiaomi', color: '🟠', url: 'https://www.mi.com/br' }
+        ]
+      },
+      {
+        id: 'galaxy-a56',
+        brand: 'Samsung',
+        name: 'Galaxy A56',
+        category: 'Custo-benefício',
+        categories: ['Custo-benefício', 'Trabalho', 'Bateria', 'Câmera'],
+        price: 1899,
+        refPrice: 2299,
+        score: 9.2,
+        scores: { 'Custo-benefício': 9.3, 'Jogos': 9.0, 'Bateria': 9.3, 'Câmera': 9.0, 'Trabalho': 9.2, 'Tela': 9.2 },
+        specs: {
+          processador: 'Exynos 1580',
+          ram: '8 GB',
+          armazenamento: '128 GB',
+          bateria: '5.000 mAh',
+          tela: '6,7" Super AMOLED 120 Hz',
+          cameras: '50 MP OIS + 12 MP + 5 MP',
+          carregamento: '45 W',
+          sistema: 'Android 15 · One UI 7 · 6 anos updates'
+        },
+        updatedAt: Date.now() - 8 * 60 * 1000,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' },
+          { name: 'Samsung', color: '🟢', url: 'https://shop.samsung.com/br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' }
+        ]
+      },
+      {
+        id: 'poco-x7',
+        brand: 'Xiaomi',
+        name: 'POCO X7',
+        category: 'Jogos',
+        categories: ['Jogos', 'Custo-benefício', 'Bateria'],
+        price: 1799,
+        refPrice: 2249,
+        score: 9.1,
+        scores: { 'Custo-benefício': 9.4, 'Jogos': 9.4, 'Bateria': 9.2, 'Câmera': 8.5, 'Trabalho': 8.8, 'Tela': 9.1 },
+        specs: {
+          processador: 'Dimensity 7300-Ultra',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '5.110 mAh',
+          tela: '6,67" AMOLED 1,5K 120 Hz',
+          cameras: '50 MP OIS + 8 MP + 2 MP',
+          carregamento: '45 W',
+          sistema: 'Android 15 · HyperOS'
+        },
+        updatedAt: Date.now() - 25 * 60 * 1000,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' },
+          { name: 'Xiaomi', color: '🟠', url: 'https://www.mi.com/br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' }
+        ]
+      },
+      {
+        id: 'moto-g54',
+        brand: 'Motorola',
+        name: 'Moto G54 5G',
+        category: 'Custo-benefício',
+        categories: ['Custo-benefício', 'Bateria', 'Estudos'],
+        price: 1149,
+        refPrice: 1399,
+        score: 8.5,
+        scores: { 'Custo-benefício': 9.2, 'Jogos': 7.8, 'Bateria': 8.9, 'Câmera': 7.9, 'Trabalho': 8.2, 'Tela': 7.5 },
+        specs: {
+          processador: 'Dimensity 7020',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '5.000 mAh',
+          tela: '6,5" LCD FHD+ 120 Hz',
+          cameras: '50 MP + 2 MP',
+          carregamento: '33 W',
+          sistema: 'Android 13/14'
+        },
+        updatedAt: Date.now() - 40 * 60 * 1000,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' }
+        ]
+      },
+      {
+        id: 'galaxy-s25-fe',
+        brand: 'Samsung',
+        name: 'Galaxy S25 FE',
+        category: 'Câmera',
+        categories: ['Câmera', 'Jogos', 'Trabalho'],
+        price: 2599,
+        refPrice: 3199,
+        score: 9.3,
+        scores: { 'Custo-benefício': 8.7, 'Jogos': 9.2, 'Bateria': 8.8, 'Câmera': 9.4, 'Trabalho': 9.3, 'Tela': 9.4 },
+        specs: {
+          processador: 'Exynos 2400',
+          ram: '8 GB',
+          armazenamento: '128 GB',
+          bateria: '~4.700 mAh',
+          tela: '6,7" Dynamic AMOLED 120 Hz',
+          cameras: '50 MP + 12 MP + 8 MP',
+          carregamento: '25 W',
+          sistema: 'Android 15 · One UI · Galaxy AI'
+        },
+        updatedAt: Date.now() - 5 * 60 * 1000,
+        stores: [
+          { name: 'Samsung', color: '🟢', url: 'https://shop.samsung.com/br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' }
+        ]
+      },
+      {
+        id: 'poco-x7-pro',
+        brand: 'Xiaomi',
+        name: 'POCO X7 Pro',
+        category: 'Jogos',
+        categories: ['Jogos', 'Custo-benefício', 'Bateria'],
+        price: 2099,
+        refPrice: 2599,
+        score: 9.2,
+        scores: { 'Custo-benefício': 9.1, 'Jogos': 9.6, 'Bateria': 9.4, 'Câmera': 8.6, 'Trabalho': 8.9, 'Tela': 9.2 },
+        specs: {
+          processador: 'Dimensity 8400-Ultra',
+          ram: '12 GB',
+          armazenamento: '256 GB',
+          bateria: '6.000 mAh',
+          tela: '6,67" AMOLED 1,5K 120 Hz',
+          cameras: '50 MP OIS + 8 MP',
+          carregamento: '90 W',
+          sistema: 'Android 15 · HyperOS'
+        },
+        updatedAt: Date.now() - 18 * 60 * 1000,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' },
+          { name: 'Xiaomi', color: '🟠', url: 'https://www.mi.com/br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' }
+        ]
+      },
+      {
+        id: 'iphone-15',
+        brand: 'Apple',
+        name: 'iPhone 15',
+        category: 'Câmera',
+        categories: ['Câmera', 'Trabalho', 'Estudos'],
+        price: 3999,
+        refPrice: 4499,
+        score: 9.0,
+        scores: { 'Custo-benefício': 7.5, 'Jogos': 8.7, 'Bateria': 8.5, 'Câmera': 9.5, 'Trabalho': 9.3, 'Tela': 9.1 },
+        specs: {
+          processador: 'A16 Bionic',
+          ram: '6 GB',
+          armazenamento: '128 GB',
+          bateria: '~3.349 mAh',
+          tela: '6,1" Super Retina XDR',
+          cameras: '48 MP + 12 MP ultra-wide',
+          carregamento: 'USB-C · MagSafe',
+          sistema: 'iOS 18'
+        },
+        updatedAt: Date.now() - 90 * 60 * 1000,
+        stores: [
+          { name: 'Apple', color: '🍎', url: 'https://www.apple.com/br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' }
+        ]
+      },
+      {
+        id: 'moto-g85',
+        brand: 'Motorola',
+        name: 'Moto G85',
+        category: 'Bateria',
+        categories: ['Bateria', 'Trabalho', 'Custo-benefício'],
+        price: 1599,
+        refPrice: 1899,
+        score: 8.8,
+        scores: { 'Custo-benefício': 9.0, 'Jogos': 8.2, 'Bateria': 9.2, 'Câmera': 8.3, 'Trabalho': 8.7, 'Tela': 8.9 },
+        specs: {
+          processador: 'Snapdragon 6s Gen 3',
+          ram: '8 GB',
+          armazenamento: '256 GB',
+          bateria: '5.000 mAh',
+          tela: '6,5" pOLED 120 Hz',
+          cameras: '50 MP OIS + 8 MP',
+          carregamento: '30 W',
+          sistema: 'Android 14'
+        },
+        updatedAt: Date.now() - 35 * 60 * 1000,
+        stores: [
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' }
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = 'celularrank_phones_v2';
+
+    function loadPhones() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length) return parsed;
+        }
+      } catch (e) {}
+      return JSON.parse(JSON.stringify(DEFAULT_PHONES));
+    }
+
+    function savePhones(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      phones = list;
+    }
+
+    let phones = loadPhones();
+    let currentFilter = 'Todos';
+    let currentBudget = 'all';
+    let currentSearch = '';
+
+    function calcCostBenefit(p) {
+      const s = p.scores || {};
+      const overall = p.score || 7;
+      const cbNote = s['Custo-benefício'] || overall;
+      const games = s['Jogos'] || overall;
+      const cam = s['Câmera'] || overall;
+      const bat = s['Bateria'] || overall;
+      const quality = (overall * 0.25 + cbNote * 0.25 + games * 0.2 + cam * 0.15 + bat * 0.15);
+      const priceFactor = Math.max(0.3, Math.min(2.2, 2200 / Math.max(p.price, 400)));
+      return +(quality * priceFactor * 10).toFixed(2);
+    }
+
+    function formatPrice(n) {
+      return 'R$ ' + Number(n).toLocaleString('pt-BR');
+    }
+
+    function updateLabel(updatedAt) {
+      const minutes = Math.max(0, Math.floor((Date.now() - (updatedAt || Date.now())) / 60000));
+      if (minutes < 60) return { text: `🟢 Atualizado há ${minutes} min`, cls: 'fresh', minutes };
+      if (minutes < 48 * 60) {
+        const h = Math.floor(minutes / 60);
+        return { text: `🟡 Atualizado há ${h} h`, cls: 'stale', minutes };
+      }
+      const d = Math.floor(minutes / (60 * 24));
+      return { text: `⚠️ Pode estar desatualizado (${d}d)`, cls: 'old', minutes };
+    }
+
+    function renderCards() {
+      const list = document.getElementById('phoneList');
+      const empty = document.getElementById('empty');
+      const term = currentSearch.toLowerCase().trim();
+      const sort = document.getElementById('sortSelect').value;
+
+      let filtered = phones.filter(p => {
+        const matchCat =
+          currentFilter === 'Todos' ||
+          p.category === currentFilter ||
+          (p.categories && p.categories.includes(currentFilter));
+        const matchBudget =
+          currentBudget === 'all' ||
+          (currentBudget === 99999 ? p.price >= 3000 : p.price <= Number(currentBudget));
+        const matchSearch =
+          !term ||
+          p.name.toLowerCase().includes(term) ||
+          p.brand.toLowerCase().includes(term);
+        return matchCat && matchBudget && matchSearch;
+      });
+
+      filtered.forEach(p => { p._cb = calcCostBenefit(p); });
+
+      filtered.sort((a, b) => {
+        switch (sort) {
+          case 'nota': return (b.score || 0) - (a.score || 0);
+          case 'preco-asc': return a.price - b.price;
+          case 'preco-desc': return b.price - a.price;
+          case 'bateria': return (b.scores?.['Bateria'] || 0) - (a.scores?.['Bateria'] || 0);
+          case 'camera': return (b.scores?.['Câmera'] || 0) - (a.scores?.['Câmera'] || 0);
+          case 'desempenho': return (b.scores?.['Jogos'] || 0) - (a.scores?.['Jogos'] || 0);
+          default: return b._cb - a._cb;
+        }
+      });
+
+      list.innerHTML = '';
+      if (!filtered.length) {
+        empty.classList.add('visible');
+        return;
+      }
+      empty.classList.remove('visible');
+
+      filtered.forEach((p, idx) => {
+        const economy = (p.refPrice || 0) - p.price;
+        const upd = updateLabel(p.updatedAt);
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-top">
+            ${sort === 'custo' || sort === 'nota' ? `<span class="card-rank">#${idx + 1}</span>` : ''}
+            <div class="phone-emoji">📱</div>
+            <div class="card-meta">
+              <span class="tag">${p.category}</span>
+              <h3>${p.name}</h3>
+              <div class="brand">${p.brand}</div>
+              <div class="score-row">
+                <span class="score-badge">⭐ <span>${Number(p.score).toFixed(1).replace('.', ',')}</span>/10</span>
+                <span class="cb-score">CB ${p._cb}</span>
+                ${economy > 0 ? `<span class="economy">−R$ ${economy.toLocaleString('pt-BR')}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="price-block">
+              <span class="price">${formatPrice(p.price)}</span>
+              ${p.refPrice > p.price ? `<span class="price-ref">${formatPrice(p.refPrice)}</span>` : ''}
+            </div>
+            <div class="price-note">melhor preço encontrado</div>
+            <div class="update-badge ${upd.cls}">${upd.text}</div>
+            <div class="mini-scores">
+              <div class="mini-score"><div class="n">${(p.scores?.['Jogos'] ?? '-').toString().replace('.', ',')}</div><div class="l">🎮</div></div>
+              <div class="mini-score"><div class="n">${(p.scores?.['Câmera'] ?? '-').toString().replace('.', ',')}</div><div class="l">📸</div></div>
+              <div class="mini-score"><div class="n">${(p.scores?.['Bateria'] ?? '-').toString().replace('.', ',')}</div><div class="l">🔋</div></div>
+              <div class="mini-score"><div class="n">${(p.scores?.['Custo-benefício'] ?? '-').toString().replace('.', ',')}</div><div class="l">💰</div></div>
+            </div>
+            <div class="specs-mini">
+              <div>⚡ ${p.specs?.ram || '—'}</div>
+              <div>💾 ${p.specs?.armazenamento || '—'}</div>
+              <div>🔋 ${p.specs?.bateria || '—'}</div>
+              <div>📱 ${(p.specs?.tela || '—').split(' ').slice(0, 2).join(' ')}</div>
+            </div>
+            <div class="card-actions">
+              <button type="button" class="btn-details" onclick="openModal('${p.id}')">Detalhes</button>
+              <button type="button" class="btn-offer" onclick="openModal('${p.id}')">Ver oferta</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function openModal(id) {
+      const p = phones.find(x => x.id === id);
+      if (!p) return;
+      const economy = (p.refPrice || 0) - p.price;
+      const upd = updateLabel(p.updatedAt);
+      const cb = calcCostBenefit(p);
+      document.getElementById('modalTitle').textContent = p.brand + ' ' + p.name;
+
+      const scoreRows = Object.entries(p.scores || {})
+        .map(([k, v]) => {
+          const pct = (Number(v) / 10) * 100;
+          return `<div class="score-bar-row">
+            <span class="label">${emojiFor(k)} ${k}</span>
+            <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div>
+            <span class="val">${Number(v).toFixed(1).replace('.', ',')}</span>
+          </div>`;
+        }).join('');
+
+      const storeBtns = (p.stores || [])
+        .map(s => `<a class="store-btn" href="${s.url || '#'}" target="_blank" rel="noopener noreferrer">
+          <span>${s.color || '🛒'} ${s.name}</span>
+          <span class="arrow">Ver oferta →</span>
+        </a>`).join('');
+
+      document.getElementById('modalBody').innerHTML = `
+        <div class="modal-hero">
+          <div class="modal-emoji">📱</div>
+          <div>
+            <div class="modal-score-big">${Number(p.score).toFixed(1).replace('.', ',')}<small>/10</small></div>
+            <div style="color:var(--muted);font-size:0.8rem;margin-top:2px">Nota geral · CB ${cb}</div>
+            <div class="update-badge ${upd.cls}" style="margin-top:8px">${upd.text}</div>
+          </div>
+        </div>
+        <div class="price-detail">
+          <div class="main-price">${formatPrice(p.price)}</div>
+          ${economy > 0 ? `<div class="savings">🟢 Economia: ${formatPrice(economy)} (ref. ${formatPrice(p.refPrice)})</div>` : ''}
+          <div class="price-meta">
+            <div>🚚 Frete: <strong>consulte na loja</strong> (depende do CEP)</div>
+            <div>📦 Entrega: <strong>consultar no checkout</strong></div>
+            <div>🕐 ${upd.text}</div>
+          </div>
+        </div>
+        <div class="block-title">🏆 Notas por categoria</div>
+        <div class="scores-grid">${scoreRows}</div>
+        <div class="block-title">📋 Especificações</div>
+        <div class="specs-list">
+          <div class="spec-row"><span class="k">⚡ Processador</span><span class="v">${p.specs?.processador || '—'}</span></div>
+          <div class="spec-row"><span class="k">🧠 RAM</span><span class="v">${p.specs?.ram || '—'}</span></div>
+          <div class="spec-row"><span class="k">💾 Armazenamento</span><span class="v">${p.specs?.armazenamento || '—'}</span></div>
+          <div class="spec-row"><span class="k">🔋 Bateria</span><span class="v">${p.specs?.bateria || '—'}</span></div>
+          <div class="spec-row"><span class="k">📱 Tela</span><span class="v">${p.specs?.tela || '—'}</span></div>
+          <div class="spec-row"><span class="k">📸 Câmeras</span><span class="v">${p.specs?.cameras || '—'}</span></div>
+          <div class="spec-row"><span class="k">🔌 Carregamento</span><span class="v">${p.specs?.carregamento || '—'}</span></div>
+          <div class="spec-row"><span class="k">🤖 Sistema</span><span class="v">${p.specs?.sistema || '—'}</span></div>
+        </div>
+        <div class="block-title">🛒 Onde comprar</div>
+        <div class="stores">${storeBtns || '<p style="color:var(--muted);font-size:0.85rem">Nenhuma loja cadastrada.</p>'}</div>
+        <div class="notice">
+          <strong>Importante:</strong> frete, prazo e estoque variam por CEP e vendedor.
+          Links de exemplo — no futuro podem ser afiliados (respeitando regras de cada programa).
+        </div>
+      `;
+      document.getElementById('modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function emojiFor(cat) {
+      const map = { 'Custo-benefício': '💰', 'Jogos': '🎮', 'Bateria': '🔋', 'Câmera': '📸', 'Trabalho': '💼', 'Tela': '📱', 'Estudos': '📚' };
+      return map[cat] || '•';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('#filterRow .filter').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      document.querySelectorAll('.category').forEach(c => c.classList.toggle('active', c.dataset.cat === filter));
+      renderCards();
+    }
+
+    function selectCategory(cat) {
+      currentFilter = cat;
+      document.querySelectorAll('#filterRow .filter').forEach(b => b.classList.toggle('active', b.dataset.filter === cat));
+      document.querySelectorAll('.category').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+      document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth' });
+      renderCards();
+    }
+
+    function setBudget(val, btn) {
+      currentBudget = val;
+      document.querySelectorAll('#budgetChips .chip').forEach(c => c.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderCards();
+    }
+
+    function applyFilters() {
+      currentSearch = document.getElementById('search').value;
+      renderCards();
+      document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function checkCep() {
+      const raw = document.getElementById('cepInput').value.replace(/\D/g, '');
+      const el = document.getElementById('cepResult');
+      if (raw.length !== 8) {
+        el.style.display = 'block';
+        el.textContent = 'Digite um CEP válido com 8 dígitos.';
+        return;
+      }
+      el.style.display = 'block';
+      el.innerHTML = `CEP <strong>${raw.slice(0,5)}-${raw.slice(5)}</strong> registrado. Em versões futuras o site consultará frete e prazo por loja. Por enquanto: <strong>consulte na loja</strong> no checkout.`;
+    }
+
+    function openAdmin() {
+      document.getElementById('mainView').classList.add('hidden');
+      document.getElementById('adminPanel').classList.add('open');
+      document.querySelectorAll('#bottomNav button').forEach(b => b.classList.remove('active'));
+      document.querySelector('#bottomNav button[data-tab="admin"]')?.classList.add('active');
+      renderAdminList();
+      clearForm();
+      window.scrollTo(0, 0);
+    }
+
+    function closeAdmin() { showMain(); }
+
+    function showMain() {
+      document.getElementById('mainView').classList.remove('hidden');
+      document.getElementById('adminPanel').classList.remove('open');
+      document.querySelectorAll('#bottomNav button').forEach(b => b.classList.remove('active'));
+      document.querySelector('#bottomNav button[data-tab="main"]')?.classList.add('active');
+      renderCards();
+    }
+
+    function renderAdminList() {
+      const list = document.getElementById('adminList');
+      list.innerHTML = phones.map(p => {
+        const upd = updateLabel(p.updatedAt);
+        return `<div class="admin-item">
+          <div class="info">
+            <h4>${p.brand} ${p.name}</h4>
+            <small>${formatPrice(p.price)} · ⭐ ${p.score} · ${upd.text}</small>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn-secondary" onclick="editPhone('${p.id}')">Editar</button>
+          </div>
+        </div>`;
+      }).join('') || '<p style="color:var(--muted)">Nenhum celular.</p>';
+    }
+
+    function clearForm() {
+      document.getElementById('editId').value = '';
+      document.getElementById('formTitle').textContent = 'Cadastrar celular';
+      document.getElementById('btnDelete').style.display = 'none';
+      ['fBrand','fName','fPrice','fRef','fScore','fJogos','fCamera','fBateria','fCb','fTrabalho','fProc','fRam','fStorage','fBat','fTela','fCams','fCharge','fOs','fStores'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      document.getElementById('fCat').value = 'Custo-benefício';
+    }
+
+    function editPhone(id) {
+      const p = phones.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('editId').value = id;
+      document.getElementById('formTitle').textContent = 'Editar: ' + p.name;
+      document.getElementById('btnDelete').style.display = 'inline-block';
+      document.getElementById('fBrand').value = p.brand || '';
+      document.getElementById('fName').value = p.name || '';
+      document.getElementById('fPrice').value = p.price || '';
+      document.getElementById('fRef').value = p.refPrice || '';
+      document.getElementById('fCat').value = p.category || 'Custo-benefício';
+      document.getElementById('fScore').value = p.score || '';
+      document.getElementById('fJogos').value = p.scores?.['Jogos'] || '';
+      document.getElementById('fCamera').value = p.scores?.['Câmera'] || '';
+      document.getElementById('fBateria').value = p.scores?.['Bateria'] || '';
+      document.getElementById('fCb').value = p.scores?.['Custo-benefício'] || '';
+      document.getElementById('fTrabalho').value = p.scores?.['Trabalho'] || '';
+      document.getElementById('fProc').value = p.specs?.processador || '';
+      document.getElementById('fRam').value = p.specs?.ram || '';
+      document.getElementById('fStorage').value = p.specs?.armazenamento || '';
+      document.getElementById('fBat').value = p.specs?.bateria || '';
+      document.getElementById('fTela').value = p.specs?.tela || '';
+      document.getElementById('fCams').value = p.specs?.cameras || '';
+      document.getElementById('fCharge').value = p.specs?.carregamento || '';
+      document.getElementById('fOs').value = p.specs?.sistema || '';
+      document.getElementById('fStores').value = p.stores ? JSON.stringify(p.stores) : '';
+      window.scrollTo(0, 0);
+    }
+
+    function savePhone() {
+      const brand = document.getElementById('fBrand').value.trim();
+      const name = document.getElementById('fName').value.trim();
+      const price = parseFloat(document.getElementById('fPrice').value);
+      if (!brand || !name || isNaN(price)) {
+        toast('Preencha marca, modelo e preço.');
+        return;
+      }
+      let stores = [];
+      try {
+        const raw = document.getElementById('fStores').value.trim();
+        if (raw) stores = JSON.parse(raw);
+      } catch (e) {
+        toast('JSON de lojas inválido. Deixe em branco ou corrija.');
+        return;
+      }
+
+      const id = document.getElementById('editId').value || (brand + '-' + name).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const existing = phones.findIndex(x => x.id === id);
+      const obj = {
+        id,
+        brand,
+        name,
+        category: document.getElementById('fCat').value,
+        categories: [document.getElementById('fCat').value],
+        price,
+        refPrice: parseFloat(document.getElementById('fRef').value) || price,
+        score: parseFloat(document.getElementById('fScore').value) || 8,
+        scores: {
+          'Custo-benefício': parseFloat(document.getElementById('fCb').value) || 8,
+          'Jogos': parseFloat(document.getElementById('fJogos').value) || 8,
+          'Bateria': parseFloat(document.getElementById('fBateria').value) || 8,
+          'Câmera': parseFloat(document.getElementById('fCamera').value) || 8,
+          'Trabalho': parseFloat(document.getElementById('fTrabalho').value) || 8,
+          'Tela': 8.5
+        },
+        specs: {
+          processador: document.getElementById('fProc').value || '—',
+          ram: document.getElementById('fRam').value || '—',
+          armazenamento: document.getElementById('fStorage').value || '—',
+          bateria: document.getElementById('fBat').value || '—',
+          tela: document.getElementById('fTela').value || '—',
+          cameras: document.getElementById('fCams').value || '—',
+          carregamento: document.getElementById('fCharge').value || '—',
+          sistema: document.getElementById('fOs').value || '—'
+        },
+        updatedAt: Date.now(),
+        stores: stores.length ? stores : [
+          { name: 'Shopee', color: '🟠', url: 'https://shopee.com.br' },
+          { name: 'Mercado Livre', color: '🔵', url: 'https://mercadolivre.com.br' },
+          { name: 'Amazon', color: '🔴', url: 'https://amazon.com.br' }
+        ]
+      };
+
+      if (existing >= 0) phones[existing] = obj;
+      else phones.push(obj);
+      savePhones(phones);
+      renderAdminList();
+      clearForm();
+      toast('Salvo! Ranking atualizado.');
+    }
+
+    function deletePhone() {
+      const id = document.getElementById('editId').value;
+      if (!id || !confirm('Excluir este celular?')) return;
+      phones = phones.filter(p => p.id !== id);
+      savePhones(phones);
+      renderAdminList();
+      clearForm();
+      toast('Excluído.');
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(phones, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'celularrank-backup.json';
+      a.click();
+      toast('JSON exportado.');
+    }
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    document.getElementById('search').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+    document.getElementById('btnAdmin').addEventListener('click', openAdmin);
+    document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    document.getElementById('cepInput').addEventListener('input', e => {
+      let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+      if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
+      e.target.value = v;
+    });
+
+    renderCards();
+  </script>
+</body>
+</html>
